@@ -1,11 +1,17 @@
-from urllib.parse import parse_qs
 import webob
-def application(environ:dict, start_response):
-    request = webob.Request(environ)
-    name  = request.params.get("name")
-    print(request)
-    start_response('200 OK', [('Content-Type', 'text/plain')])
-    return ['hello {}'.format(name).encode()]
+from webob.dec import wsgify
+from webob import Request,Response
+
+
+@wsgify
+def application(request: Request):
+    name = request.params.get('name')
+
+    response = Response()
+    response.text = 'hello {}'.format(name)
+    response.status_code = 200
+    response.content_type = 'text/plain'
+    return response
 
 
 if __name__ == '__main__':
