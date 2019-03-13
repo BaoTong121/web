@@ -1,6 +1,9 @@
 import webob
 from webob.dec import wsgify
 from webob import Request,Response
+from webob import exc
+
+
 def hello(request):
     name = request.params.get('name')
     response = Response()
@@ -19,11 +22,14 @@ class application():
     def register(cls, path, handler):
         cls.ROUTE[path] = handler
     def default_handler(self,request):
-        return Response(status=404,body='not found')
+        raise exc.HTTPNotFound('Not fount')
 
     @wsgify
     def __call__(self,request:Request)->Response:
-        return self.ROUTE.get(request.path,self.default_handler)(request)
+        try:
+            return self.ROUTE[request.path](request)
+        except KeyError:
+            raise exc.HTTPNotFound('Not Fount')
 
 
 if __name__ == '__main__':
