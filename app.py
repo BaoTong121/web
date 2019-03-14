@@ -2,33 +2,36 @@ import webob
 from webob.dec import wsgify
 from webob import Request,Response
 from webob import exc
+import re
+
 
 
 class application():
-    ROUTE = {}
-
+    ROUTE = []
     @classmethod
-    def register(cls, path):
+    def register(cls, pattern):
         def wrap(handler):
-            cls.ROUTE[path] = handler
+            cls.ROUTE.append((re.compile(pattern),handler))
             return handler
         return wrap
     @wsgify
     def __call__(self,request:Request)->Response:
-        try:
-            return self.ROUTE[request.path](request)
-        except KeyError:
-            raise exc.HTTPNotFound('Not Fount')
+        for pattern, handler in self.ROUTE:
+            if pattern.match(request.path):
+                return handler(request)
+        raise exc.HTTPNotFound('Not Fount')
 
-@application.register('/hello')
+
+
+@application.register('^/hello$')
 def hello(request):
-    name = request.params.get('name')
+    name = request.params.get('name','anonymous')
     response = Response()
     response.text = 'hello {}'.format(name)
     response.status_code = 200
     response.content_type = 'text/plain'
     return response
-@application.register('/')
+@application.register('^/$')
 def index(request):
     return Response(body='hello world',status=200,content_type='text/plain')
 
